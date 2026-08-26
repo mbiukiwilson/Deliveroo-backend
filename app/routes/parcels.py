@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import get_jwt_identity, jwt_required
 
@@ -76,6 +78,8 @@ def create_parcel():
         status="pending",
         current_location=data["pickup_location"],
         price=calculate_price(weight),
+        currency=(data.get("currency") or "KES").upper(),
+        payment_status="pending",
     )
 
     db.session.add(parcel)
@@ -121,12 +125,21 @@ def update_destination(parcel_id):
     if parcel.status in {STATUS_DELIVERED, STATUS_CANCELLED}:
         return jsonify({"error": "Destination can no longer be changed"}), 400
 
-    destination = (request.get_json() or {}).get("destination", "").strip()
+    data = request.get_json() or {}
+    destination = data.get("destination", "").strip()
 
     if not destination:
         return jsonify({"error": "Destination is required"}), 400
 
     parcel.destination = destination
+    if "destination_lat" in data:
+        parcel.destination_lat = data.get("destination_lat")
+    if "destination_lng" in data:
+        parcel.destination_lng = data.get("destination_lng")
+    if "distance" in data:
+        parcel.distance = data.get("distance")
+    if "duration" in data:
+        parcel.duration = data.get("duration")
     db.session.commit()
 
     return jsonify(parcel.to_dict())
@@ -156,3 +169,56 @@ def cancel_parcel(parcel_id):
     db.session.commit()
 
     return jsonify(parcel.to_dict())
+
+
+@parcels_bp.post("/<int:parcel_id>/pay")
+@jwt_required()
+def pay_parcel(parcel_id):
+    user_id = current_user_id()
+    parcel = Parcel.query.filter_by(id=parcel_id, user_id=user_id).first()
+
+    if not parcel:
+        return jsonify({"error": "Parcel not found"}), 404
+    if parcel.status == STATUS_CANCELLED:
+        return jsonify({"error": "Cancelled parcels cannot be paid"}), 400
+    if parcel.payment_status == "paid":
+        return jsonify(parcel.to_dict())
+
+    # Demo payment confirmation. Replace this endpoint with M-Pesa/Stripe webhook
+    # confirmation when real payment credentials are configured.
+    parcel.payment_status = "paid"
+    parcel.payment_reference = f"DEMO-{parcel.id}-{int(datetime.now(timezone.utc).timestamp())}"
+    parcel.paid_at = datetime.now(timezone.utc)
+    db.session.commit()
+
+    return jsonify(parcel.to_dict())
+
+
+@parcels_bp.get("/<int:parcel_id>/locations")
+@jwt_required()
+def parcel_locations(parcel_id):
+    parcel = Parcel.query.filter_by(id=parcel_id, user_id=current_user_id()).first()
+    if not parcel:
+        return jsonify({"error": "Parcel not found"}), 404
+
+    page = max(request.args.get("page", 1, type=int), 1)
+    per_page = min(max(request.args.get("per_page", 20, type=int), 1), 100)
+    pagination = ParcelLocation.query.filter_by(parcel_id=parcel.id).order_by(
+        ParcelLocation.created_at.desc()
+    ).paginate(page=page, per_page=per_page, error_out=False)
+
+    return jsonify({
+        "data": [{
+            "id": item.id,
+            "location": item.location,
+            "latitude": float(item.latitude) if item.latitude is not None else None,
+            "longitude": float(item.longitude) if item.longitude is not None else None,
+            "created_at": item.created_at.isoformat() if item.created_at else None,
+        } for item in pagination.items],
+        "pagination": {
+            "page": pagination.page,
+            "per_page": pagination.per_page,
+            "total": pagination.total,
+            "pages": pagination.pages,
+        },
+    })
