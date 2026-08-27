@@ -6,7 +6,6 @@ from app.models import User, Parcel, ParcelStatusHistory, ParcelLocation
 
 admin_bp = Blueprint("admin", __name__)
 
-
 def admin_user():
     return User.query.get(int(get_jwt_identity()))
 
@@ -14,7 +13,6 @@ def admin_user():
 def require_admin():
     user = admin_user()
     return user if user and user.role == "admin" else None
-
 
 @admin_bp.get("/parcels")
 @jwt_required()
@@ -41,7 +39,6 @@ def list_all_parcels():
         },
     })
 
-
 @admin_bp.patch("/parcels/<int:parcel_id>/status")
 @jwt_required()
 def update_status(parcel_id):
@@ -56,6 +53,11 @@ def update_status(parcel_id):
     if status not in allowed:
         return jsonify({"error": "Invalid status"}), 400
 
+    if status == "in_transit" and parcel.payment_status != "paid":
+        return jsonify({
+            "error": "Payment is required before a parcel can be marked as in transit."
+        }), 402
+
     parcel.status = status
 
     db.session.add(ParcelStatusHistory(
@@ -67,7 +69,6 @@ def update_status(parcel_id):
 
     db.session.commit()
     return jsonify(parcel.to_dict())
-
 
 @admin_bp.patch("/parcels/<int:parcel_id>/location")
 @jwt_required()

@@ -1,6 +1,5 @@
 from run import db
 
-
 class Parcel(db.Model):
     __tablename__ = "parcels"
 
@@ -27,6 +26,10 @@ class Parcel(db.Model):
     distance = db.Column(db.Numeric(10, 2))
     duration = db.Column(db.String(50))
     price = db.Column(db.Numeric(10, 2))
+    currency = db.Column(db.String(3), nullable=False, default="KES")
+    payment_status = db.Column(db.String(20), nullable=False, default="pending")
+    payment_reference = db.Column(db.String(100))
+    paid_at = db.Column(db.DateTime)
 
     created_at = db.Column(db.DateTime, server_default=db.func.now(), nullable=False)
     updated_at = db.Column(
@@ -68,9 +71,12 @@ class Parcel(db.Model):
             "distance": float(self.distance) if self.distance is not None else None,
             "duration": self.duration,
             "price": float(self.price) if self.price is not None else None,
+            "currency": self.currency,
+            "payment_status": self.payment_status,
+            "payment_reference": self.payment_reference,
+            "paid_at": self.paid_at.isoformat() if self.paid_at else None,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
-
 
 class ParcelStatusHistory(db.Model):
     __tablename__ = "parcel_status_history"
@@ -83,7 +89,6 @@ class ParcelStatusHistory(db.Model):
     created_at = db.Column(db.DateTime, server_default=db.func.now(), nullable=False)
 
     parcel = db.relationship("Parcel", back_populates="status_history")
-
 
 class ParcelLocation(db.Model):
     __tablename__ = "parcel_locations"
