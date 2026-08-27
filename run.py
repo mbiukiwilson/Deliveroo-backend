@@ -39,8 +39,6 @@ def create_app():
     # =========================
     # CORS
     # =========================
-    # Allow the Vercel frontend to communicate
-    # with the Render backend.
     CORS(
         app,
         resources={
@@ -89,10 +87,9 @@ def create_app():
         })
 
     # =========================
-    # DATABASE INITIALIZATION
+    # CREATE DATABASE TABLES
     # =========================
-    @app.cli.command("db-init")
-    def db_init():
+    with app.app_context():
         from app.models import (
             User,
             Parcel,
@@ -100,9 +97,7 @@ def create_app():
             ParcelLocation,
         )
 
-        with app.app_context():
-            db.create_all()
-            print("Database tables created.")
+        db.create_all()
 
     return app
 
@@ -111,4 +106,8 @@ app = create_app()
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(
+        host="0.0.0.0",
+        port=int(os.environ.get("PORT", 5000)),
+        debug=True
+    )
