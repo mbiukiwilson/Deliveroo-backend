@@ -16,56 +16,91 @@ jwt = JWTManager()
 def create_app():
     app = Flask(__name__)
 
-    # Database
+    # =========================
+    # DATABASE
+    # =========================
     app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv(
         "DATABASE_URL",
         "sqlite:///sendit.db",
     )
+
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
+    # =========================
     # JWT
+    # =========================
     app.config["JWT_SECRET_KEY"] = os.getenv(
         "JWT_SECRET_KEY",
         "dev-secret-change-this-to-a-long-random-key",
     )
+
     app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=24)
 
+    # =========================
     # CORS
+    # =========================
+    frontend_url = os.getenv(
+        "FRONTEND_URL",
+        "https://deliveroo-frontend-lota.vercel.app",
+    )
+
+    allowed_origins = [
+        frontend_url,
+        "https://deliveroo-frontend-lota.vercel.app",
+        "https://deliveroo-frontend-2616n9bdz-mbiukwilsons-projects.vercel.app",
+    ]
+
     CORS(
         app,
         resources={
             r"/api/*": {
-                "origins": [
-                    "http://localhost:5173",
-                    "https://deliveroo-frontend-lota.vercel.app",
-                    "https://deliveroo-frontend-2616n9bdz-mbiukwilsons-projects.vercel.app",
-                ]
+                "origins": allowed_origins,
             }
         },
         supports_credentials=True,
     )
 
+    # =========================
+    # INITIALIZE EXTENSIONS
+    # =========================
     db.init_app(app)
     jwt.init_app(app)
 
-    # Routes
+    # =========================
+    # ROUTES
+    # =========================
     from app.routes.auth import auth_bp
     from app.routes.parcels import parcels_bp
     from app.routes.admin import admin_bp
 
-    app.register_blueprint(auth_bp, url_prefix="/api/auth")
-    app.register_blueprint(parcels_bp, url_prefix="/api/parcels")
-    app.register_blueprint(admin_bp, url_prefix="/api/admin")
+    app.register_blueprint(
+        auth_bp,
+        url_prefix="/api/auth",
+    )
 
-    # Health check
+    app.register_blueprint(
+        parcels_bp,
+        url_prefix="/api/parcels",
+    )
+
+    app.register_blueprint(
+        admin_bp,
+        url_prefix="/api/admin",
+    )
+
+    # =========================
+    # HEALTH CHECK
+    # =========================
     @app.get("/api/health")
     def health():
         return jsonify({
             "status": "ok",
-            "service": "sendit-api"
+            "service": "sendit-api",
         })
 
-    # Database initialization
+    # =========================
+    # DATABASE INITIALIZATION
+    # =========================
     @app.cli.command("db-init")
     def db_init():
         from app.models import (
