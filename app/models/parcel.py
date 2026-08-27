@@ -50,3 +50,40 @@ class Parcel(db.Model):
         back_populates="parcel",
         cascade="all, delete-orphan",
     )
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "tracking_id": f"SIT-{self.id:06d}",
+            "pickup_location": self.pickup_location,
+            "pickup_lat": float(self.pickup_lat) if self.pickup_lat is not None else None,
+            "pickup_lng": float(self.pickup_lng) if self.pickup_lng is not None else None,
+            "destination": self.destination,
+            "destination_lat": float(self.destination_lat) if self.destination_lat is not None else None,
+            "destination_lng": float(self.destination_lng) if self.destination_lng is not None else None,
+            "weight": float(self.weight),
+            "description": self.description,
+            "status": self.status,
+            "current_location": self.current_location,
+            "current_lat": float(self.current_lat) if self.current_lat is not None else None,
+            "current_lng": float(self.current_lng) if self.current_lng is not None else None,
+            "distance": float(self.distance) if self.distance is not None else None,
+            "duration": self.duration,
+            "price": float(self.price) if self.price is not None else None,
+            "currency": self.currency,
+            "payment_status": self.payment_status,
+            "payment_reference": self.payment_reference,
+            "paid_at": self.paid_at.isoformat() if self.paid_at else None,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
+
+class ParcelStatusHistory(db.Model):
+    __tablename__ = "parcel_status_history"
+
+    id = db.Column(db.Integer, primary_key=True)
+    parcel_id = db.Column(db.Integer, db.ForeignKey("parcels.id"), nullable=False)
+    status = db.Column(db.String(30), nullable=False)
+    location = db.Column(db.String(255))
+    changed_by = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    created_at = db.Column(db.DateTime, server_default=db.func.now(), nullable=False)
