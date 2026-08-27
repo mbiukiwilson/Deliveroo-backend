@@ -16,18 +16,18 @@ jwt = JWTManager()
 def create_app():
     app = Flask(__name__)
 
+    # Database
     app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv(
         "DATABASE_URL",
         "sqlite:///sendit.db",
     )
-
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
+    # JWT
     app.config["JWT_SECRET_KEY"] = os.getenv(
         "JWT_SECRET_KEY",
         "dev-secret-change-this-to-a-long-random-key",
     )
-
     app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=24)
 
     # CORS
@@ -42,11 +42,13 @@ def create_app():
                 ]
             }
         },
+        supports_credentials=True,
     )
 
     db.init_app(app)
     jwt.init_app(app)
 
+    # Routes
     from app.routes.auth import auth_bp
     from app.routes.parcels import parcels_bp
     from app.routes.admin import admin_bp
@@ -55,6 +57,7 @@ def create_app():
     app.register_blueprint(parcels_bp, url_prefix="/api/parcels")
     app.register_blueprint(admin_bp, url_prefix="/api/admin")
 
+    # Health check
     @app.get("/api/health")
     def health():
         return jsonify({
@@ -62,6 +65,7 @@ def create_app():
             "service": "sendit-api"
         })
 
+    # Database initialization
     @app.cli.command("db-init")
     def db_init():
         from app.models import (
