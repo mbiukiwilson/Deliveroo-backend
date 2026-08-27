@@ -69,3 +69,32 @@ def update_status(parcel_id):
 
     db.session.commit()
     return jsonify(parcel.to_dict())
+
+@admin_bp.patch("/parcels/<int:parcel_id>/location")
+@jwt_required()
+def update_location(parcel_id):
+    admin = require_admin()
+    if not admin:
+        return jsonify({"error": "Admin access required"}), 403
+
+    parcel = Parcel.query.get_or_404(parcel_id)
+    data = request.get_json() or {}
+    location = data.get("location", "").strip()
+
+    if not location:
+        return jsonify({"error": "Location is required"}), 400
+
+    parcel.current_location = location
+    parcel.current_lat = data.get("latitude")
+    parcel.current_lng = data.get("longitude")
+
+    db.session.add(ParcelLocation(
+        parcel_id=parcel.id,
+        location=location,
+        latitude=data.get("latitude"),
+        longitude=data.get("longitude"),
+        recorded_by=admin.id,
+    ))
+
+    db.session.commit()
+    return jsonify(parcel.to_dict())
