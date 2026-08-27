@@ -38,3 +38,15 @@ class Parcel(db.Model):
         onupdate=db.func.now(),
         nullable=False,
     )
+
+    user = db.relationship("User", back_populates="parcels")
+    status_history = db.relationship(
+        "ParcelStatusHistory",
+        back_populates="parcel",
+        cascade="all, delete-orphan",
+    )
+    locations = db.relationship(
+        "ParcelLocation",
+        back_populates="parcel",
+        cascade="all, delete-orphan",
+    )
