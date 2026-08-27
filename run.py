@@ -23,23 +23,23 @@ def create_app():
 
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-    # JWT configuration
     app.config["JWT_SECRET_KEY"] = os.getenv(
         "JWT_SECRET_KEY",
         "dev-secret-change-this-to-a-long-random-key",
     )
 
-    # Keep users logged in for 24 hours
     app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=24)
 
+    # CORS
     CORS(
         app,
         resources={
             r"/api/*": {
-                "origins": os.getenv(
-                    "FRONTEND_URL",
+                "origins": [
                     "http://localhost:5173",
-                )
+                    "https://deliveroo-frontend-lota.vercel.app",
+                    "https://deliveroo-frontend-2616n9bdz-mbiukwilsons-projects.vercel.app",
+                ]
             }
         },
     )
