@@ -39,19 +39,15 @@ def create_app():
     # =========================
     # CORS
     # =========================
+    # Allow the Vercel frontend to communicate
+    # with the Render backend.
     CORS(
         app,
         resources={
             r"/api/*": {
-                "origins": [
-                    "http://localhost:5173",
-                    "https://deliveroo-frontend-lota.vercel.app",
-                    "https://deliveroo-frontend-2616n9bdz-mbiukwilsons-projects.vercel.app",
-                    "https://deliveroo-frontend-79v0e98ng-mbiukwilsons-projects.vercel.app",
-                ]
+                "origins": "*"
             }
-        },
-        supports_credentials=True,
+        }
     )
 
     # =========================
@@ -69,17 +65,17 @@ def create_app():
 
     app.register_blueprint(
         auth_bp,
-        url_prefix="/api/auth",
+        url_prefix="/api/auth"
     )
 
     app.register_blueprint(
         parcels_bp,
-        url_prefix="/api/parcels",
+        url_prefix="/api/parcels"
     )
 
     app.register_blueprint(
         admin_bp,
-        url_prefix="/api/admin",
+        url_prefix="/api/admin"
     )
 
     # =========================
@@ -89,7 +85,7 @@ def create_app():
     def health():
         return jsonify({
             "status": "ok",
-            "service": "sendit-api",
+            "service": "sendit-api"
         })
 
     # =========================
