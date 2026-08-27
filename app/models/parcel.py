@@ -89,3 +89,16 @@ class ParcelStatusHistory(db.Model):
     created_at = db.Column(db.DateTime, server_default=db.func.now(), nullable=False)
 
     parcel = db.relationship("Parcel", back_populates="status_history")
+
+class ParcelLocation(db.Model):
+    __tablename__ = "parcel_locations"
+
+    id = db.Column(db.Integer, primary_key=True)
+    parcel_id = db.Column(db.Integer, db.ForeignKey("parcels.id"), nullable=False)
+    location = db.Column(db.String(255), nullable=False)
+    latitude = db.Column(db.Numeric(10, 7))
+    longitude = db.Column(db.Numeric(10, 7))
+    recorded_by = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    created_at = db.Column(db.DateTime, server_default=db.func.now(), nullable=False)
+
+    parcel = db.relationship("Parcel", back_populates="locations")
