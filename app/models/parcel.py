@@ -87,3 +87,5 @@ class ParcelStatusHistory(db.Model):
     location = db.Column(db.String(255))
     changed_by = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     created_at = db.Column(db.DateTime, server_default=db.func.now(), nullable=False)
+
+    parcel = db.relationship("Parcel", back_populates="status_history")
