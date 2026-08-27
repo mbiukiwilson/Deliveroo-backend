@@ -39,22 +39,16 @@ def create_app():
     # =========================
     # CORS
     # =========================
-    frontend_url = os.getenv(
-        "FRONTEND_URL",
-        "https://deliveroo-frontend-lota.vercel.app",
-    )
-
-    allowed_origins = [
-        frontend_url,
-        "https://deliveroo-frontend-lota.vercel.app",
-        "https://deliveroo-frontend-2616n9bdz-mbiukwilsons-projects.vercel.app",
-    ]
-
     CORS(
         app,
         resources={
             r"/api/*": {
-                "origins": allowed_origins,
+                "origins": [
+                    "http://localhost:5173",
+                    "https://deliveroo-frontend-lota.vercel.app",
+                    "https://deliveroo-frontend-2616n9bdz-mbiukwilsons-projects.vercel.app",
+                    "https://deliveroo-frontend-79v0e98ng-mbiukwilsons-projects.vercel.app",
+                ]
             }
         },
         supports_credentials=True,
